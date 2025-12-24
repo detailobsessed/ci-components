@@ -1,0 +1,60 @@
+name: Semantic Release (Bun)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version for semantic-release"
+        required: false
+        default: "22"
+        type: string
+      bun-version:
+        description: "Bun version"
+        required: false
+        default: "latest"
+        type: string
+      build-command:
+        description: "Build command to run before release"
+        required: false
+        default: "bun run build"
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: ${{ inputs.build-command }}
+
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bunx semantic-release
