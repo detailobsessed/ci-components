@@ -74,7 +74,7 @@ jobs:
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `node-version` | `22` | Node.js version |
+| `node-version` | `24` | Node.js version (24+ required for OIDC) |
 | `bun-version` | `latest` | Bun version |
 | `build-command` | `bun run build` | Build command to run before publish |
 
