@@ -18,26 +18,17 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   release:
     uses: detailobsessed/ci-components/.github/workflows/semantic-release-bun.yml@main
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-```
-
-**With custom options:**
-
-```yaml
-jobs:
-  release:
-    uses: detailobsessed/ci-components/.github/workflows/semantic-release-bun.yml@main
-    with:
-      node-version: "22"
-      bun-version: "latest"
-      build-command: "bun run build"
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    secrets: inherit
 ```
 
 **Inputs:**
@@ -53,7 +44,50 @@ jobs:
 - `.releaserc.json` - semantic-release configuration
 - `package.json` with semantic-release dev dependencies
 
+---
+
+### NPM Publish (Bun)
+
+Publish to npm with OIDC provenance (no `NPM_TOKEN` secret needed). Triggered by GitHub releases.
+
+**Usage:**
+
+```yaml
+# .github/workflows/npm-publish.yml
+name: NPM Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    uses: detailobsessed/ci-components/.github/workflows/npm-publish-bun.yml@main
+```
+
+**Inputs:**
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `node-version` | `22` | Node.js version |
+| `bun-version` | `latest` | Bun version |
+| `build-command` | `bun run build` | Build command to run before publish |
+
+**Prerequisites:**
+
+1. Configure npm trusted publishing for your package at [npmjs.com](https://docs.npmjs.com/generating-provenance-statements#publishing-packages-with-provenance-via-github-actions)
+2. Set `"publishConfig": { "access": "public" }` in `package.json` for scoped packages
+
+---
+
 ## Setup for New Projects
+
+### GitHub-only releases (no npm)
 
 1. Add `.releaserc.json`:
 
@@ -80,4 +114,11 @@ jobs:
 bun add -d semantic-release @semantic-release/changelog @semantic-release/git
 ```
 
-3. Create workflow file calling this reusable workflow.
+3. Create `release.yml` workflow calling the semantic-release workflow.
+
+### With npm publishing
+
+Use the same setup as above, plus:
+
+4. Create `npm-publish.yml` workflow calling the npm-publish workflow.
+5. Configure npm trusted publishing for your GitHub repo.
