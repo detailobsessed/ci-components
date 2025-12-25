@@ -1,0 +1,53 @@
+name: NPM Publish (Bun)
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        description: "Node.js version"
+        required: false
+        default: "22"
+        type: string
+      bun-version:
+        description: "Bun version"
+        required: false
+        default: "latest"
+        type: string
+      build-command:
+        description: "Build command to run before publish"
+        required: false
+        default: "bun run build"
+        type: string
+
+jobs:
+  publish:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: "https://registry.npmjs.org/"
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build
+        run: ${{ inputs.build-command }}
+
+      - name: Publish to npm with provenance
+        run: npm publish --access public --provenance
