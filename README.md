@@ -80,8 +80,10 @@ jobs:
 
 **Prerequisites:**
 
-1. Configure npm trusted publishing for your package at [npmjs.com](https://docs.npmjs.com/generating-provenance-statements#publishing-packages-with-provenance-via-github-actions)
+1. Configure [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/) for your package at npmjs.com
 2. Set `"publishConfig": { "access": "public" }` in `package.json` for scoped packages
+
+**Note:** Provenance attestations are automatically generated when publishing via trusted publishing from public repos.
 
 ---
 
