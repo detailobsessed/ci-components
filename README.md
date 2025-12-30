@@ -8,7 +8,7 @@ Reusable GitHub Actions workflows for personal projects.
 
 Automated versioning and changelog generation for Bun/TypeScript projects.
 
-**Usage:**
+**Usage (basic):**
 
 ```yaml
 # .github/workflows/release.yml
@@ -30,6 +30,35 @@ jobs:
     uses: detailobsessed/ci-components/.github/workflows/semantic-release-bun.yml@main
     secrets: inherit
 ```
+
+**Usage (gated on CI):**
+
+To ensure releases only happen after CI passes:
+
+```yaml
+# .github/workflows/release.yml
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    uses: detailobsessed/ci-components/.github/workflows/semantic-release-bun.yml@main
+    secrets: inherit
+```
+
+This prevents broken commits from being released before CI catches failures.
 
 **Inputs:**
 
