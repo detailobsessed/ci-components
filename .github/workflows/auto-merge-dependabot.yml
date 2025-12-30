@@ -1,0 +1,55 @@
+name: Auto Merge Dependabot
+
+on:
+  workflow_call:
+    inputs:
+      merge-method:
+        description: "Merge method (merge, squash, rebase)"
+        required: false
+        default: "merge"
+        type: string
+      update-types:
+        description: "Update types to auto-merge (comma-separated: minor,patch)"
+        required: false
+        default: "minor,patch"
+        type: string
+
+jobs:
+  auto-merge:
+    name: Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if update type should be auto-merged
+        id: check
+        run: |
+          UPDATE_TYPE="${{ steps.metadata.outputs.update-type }}"
+          ALLOWED_TYPES="${{ inputs.update-types }}"
+          
+          SHOULD_MERGE="false"
+          if [[ "$ALLOWED_TYPES" == *"minor"* ]] && [[ "$UPDATE_TYPE" == "version-update:semver-minor" ]]; then
+            SHOULD_MERGE="true"
+          fi
+          if [[ "$ALLOWED_TYPES" == *"patch"* ]] && [[ "$UPDATE_TYPE" == "version-update:semver-patch" ]]; then
+            SHOULD_MERGE="true"
+          fi
+          
+          echo "should-merge=$SHOULD_MERGE" >> $GITHUB_OUTPUT
+
+      - name: Auto-merge
+        if: steps.check.outputs.should-merge == 'true'
+        run: gh pr merge --auto --${{ inputs.merge-method }} "${{ github.event.pull_request.number }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
