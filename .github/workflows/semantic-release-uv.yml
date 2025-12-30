@@ -18,6 +18,10 @@ on:
         required: false
         default: "false"
         type: string
+    outputs:
+      released:
+        description: "Whether a new release was created"
+        value: ${{ jobs.release.outputs.released }}
 
 jobs:
   release:
@@ -29,6 +33,8 @@ jobs:
       id-token: write
     environment:
       name: pypi
+    outputs:
+      released: ${{ steps.release.outputs.released }}
 
     steps:
       - name: Checkout
