@@ -161,6 +161,75 @@ Use the same setup as above, plus:
 
 ---
 
+### Semantic Release (Python/UV)
+
+Automated versioning and changelog generation for Python projects using uv.
+
+**Usage:**
+
+```yaml
+# .github/workflows/release.yml
+name: release
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    uses: detailobsessed/ci-components/.github/workflows/semantic-release-uv.yml@main
+    with:
+      pypi-publish: "false"  # See PyPI publishing section below
+    secrets: inherit
+
+  # PyPI publish must be in calling workflow for trusted publishing to work
+  pypi-publish:
+    needs: release
+    if: needs.release.outputs.released == 'true' && vars.PYPI_PUBLISH == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/your-package
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv build
+      - run: uv publish
+```
+
+**Inputs:**
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `python-version` | `3.13` | Python version |
+| `runner` | `blacksmith-4vcpu-ubuntu-2404` | GitHub Actions runner |
+| `pypi-publish` | `false` | PyPI publish mode: `true`, `test`, or `false` |
+
+**Outputs:**
+
+| Output | Description |
+|--------|-------------|
+| `released` | `true` if a new release was created, `false` otherwise |
+
+**Required in calling repo:**
+
+- `pyproject.toml` with `[tool.semantic_release]` configuration
+- `python-semantic-release` in dev dependencies (`uv add --group maintain python-semantic-release`)
+
+> **⚠️ PyPI Trusted Publishing:** The `pypi-publish` input in this workflow will NOT work with PyPI trusted publishing because OIDC tokens from reusable workflows contain the reusable workflow's repository in the claims, not the calling repository. You MUST add a separate `pypi-publish` job in your calling workflow as shown above.
+
+---
+
 ### MCP Registry Publish (Bun)
 
 Publish MCP servers to the [official MCP Registry](https://registry.modelcontextprotocol.io/) using OIDC authentication.
@@ -195,11 +264,14 @@ jobs:
 
 **Prerequisites:**
 
-1. Add `mcpName` to `package.json`: `"mcpName": "io.github.{org}/{server-name}"`
-2. Create `server.json` with MCP server metadata ([schema](https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json))
-3. For org namespaces, ensure your org membership is **public** at `https://github.com/orgs/{org}/people`
+1. Create `server.json` with MCP server metadata ([schema](https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json))
+2. For npm packages: Add `mcpName` to `package.json`: `"mcpName": "io.github.{org}/{server-name}"`
+3. For PyPI packages: Add `<!-- mcp-name: io.github.{org}/{server-name} -->` to README.md (ownership validation)
+4. For PyPI packages: Include `version` in `packages[]` array (required despite schema saying optional)
+5. For org namespaces, ensure your org membership is **public** at `https://github.com/orgs/{org}/people`
+6. First publish must be done manually: `mcp-publisher login github && mcp-publisher publish`
 
-**Tip:** Use `@semantic-release/exec` to keep `server.json` version in sync:
+**Tip:** Use `@semantic-release/exec` (npm) or `version_variables` (python-semantic-release) to keep `server.json` version in sync:
 
 ```json
 ["@semantic-release/exec", {
