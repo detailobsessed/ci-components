@@ -77,7 +77,9 @@ This prevents broken commits from being released before CI catches failures.
 
 ### NPM Publish (Bun)
 
-Publish to npm with OIDC provenance (no `NPM_TOKEN` secret needed). Triggered by GitHub releases.
+Publish to npm with OIDC provenance (no `NPM_TOKEN` secret needed).
+
+> **⚠️ Important:** Do NOT use `on: release: types: [published]` as the trigger. Releases created with `GITHUB_TOKEN` (which semantic-release uses) do NOT emit `release` events. Use `workflow_run` instead.
 
 **Usage:**
 
@@ -86,8 +88,10 @@ Publish to npm with OIDC provenance (no `NPM_TOKEN` secret needed). Triggered by
 name: NPM Publish
 
 on:
-  release:
-    types: [published]
+  workflow_run:
+    workflows: ["Release"]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -96,6 +100,7 @@ permissions:
 
 jobs:
   publish:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     uses: detailobsessed/ci-components/.github/workflows/npm-publish-bun.yml@main
 ```
 
