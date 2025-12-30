@@ -1,0 +1,31 @@
+name: MCP Registry Publish (Bun)
+
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: "Runner to use (Blacksmith works with OIDC)"
+        required: false
+        default: "blacksmith-4vcpu-ubuntu-2404"
+        type: string
+
+jobs:
+  publish:
+    name: Publish to MCP Registry
+    runs-on: ${{ inputs.runner }}
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+
+      - name: Authenticate to MCP Registry
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish to MCP Registry
+        run: ./mcp-publisher publish

@@ -124,3 +124,84 @@ Use the same setup as above, plus:
 
 4. Create `npm-publish.yml` workflow calling the npm-publish workflow.
 5. Configure npm trusted publishing for your GitHub repo.
+
+---
+
+### MCP Registry Publish (Bun)
+
+Publish MCP servers to the [official MCP Registry](https://registry.modelcontextprotocol.io/) using OIDC authentication.
+
+**Usage:**
+
+```yaml
+# .github/workflows/mcp-registry-publish.yml
+name: MCP Registry Publish
+
+on:
+  workflow_run:
+    workflows: ["NPM Publish"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    uses: detailobsessed/ci-components/.github/workflows/mcp-registry-publish-bun.yml@main
+```
+
+**Inputs:**
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `runner` | `blacksmith-4vcpu-ubuntu-2404` | Runner to use (Blacksmith works with OIDC) |
+
+**Prerequisites:**
+
+1. Add `mcpName` to `package.json`: `"mcpName": "io.github.{org}/{server-name}"`
+2. Create `server.json` with MCP server metadata ([schema](https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json))
+3. For org namespaces, ensure your org membership is **public** at `https://github.com/orgs/{org}/people`
+
+**Tip:** Use `@semantic-release/exec` to keep `server.json` version in sync:
+
+```json
+["@semantic-release/exec", {
+  "prepareCmd": "sed -i'' -e 's/\"version\": \"[^\"]*\"/\"version\": \"${nextRelease.version}\"/g' server.json"
+}]
+```
+
+---
+
+### Auto Merge Dependabot
+
+Automatically merge Dependabot PRs for minor and patch updates.
+
+**Usage:**
+
+```yaml
+# .github/workflows/auto-merge.yml
+name: Auto Merge Dependabot PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    uses: detailobsessed/ci-components/.github/workflows/auto-merge-dependabot.yml@main
+    secrets: inherit
+```
+
+**Inputs:**
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `merge-method` | `merge` | Merge method (merge, squash, rebase) |
+| `update-types` | `minor,patch` | Update types to auto-merge (comma-separated) |
