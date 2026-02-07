@@ -228,6 +228,28 @@ jobs:
 
 > **⚠️ PyPI Trusted Publishing:** The `pypi-publish` input in this workflow will NOT work with PyPI trusted publishing because OIDC tokens from reusable workflows contain the reusable workflow's repository in the claims, not the calling repository. You MUST add a separate `pypi-publish` job in your calling workflow as shown above.
 
+#### Manual Publishing (First Release)
+
+Before trusted publishing is configured, you need to publish manually. Uses [1Password CLI](https://developer.1password.com/docs/cli/) to avoid tokens in shell history.
+
+```bash
+# Build
+uv build
+
+# Publish to TestPyPI (validate first)
+uv publish --publish-url https://test.pypi.org/legacy/ --token "$(op read op://Personal/testpypi-token/credential)"
+
+# Publish to PyPI (production)
+uv publish --token "$(op read op://Personal/pypi-token/credential)"
+```
+
+**Recommended flow:**
+
+1. **TestPyPI first** — create token at https://test.pypi.org/manage/account/token/, publish manually
+2. **PyPI prod** — create token at https://pypi.org/manage/account/token/, publish manually
+3. **Configure trusted publishing** on PyPI web (one-time, no API available)
+4. **Set `PYPI_PUBLISH=true`** repo variable — CI handles it from here
+
 ---
 
 ### MCP Registry Publish (Bun)
