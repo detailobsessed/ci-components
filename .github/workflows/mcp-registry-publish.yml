@@ -1,4 +1,4 @@
-name: MCP Registry Publish (Bun)
+name: MCP Registry Publish
 
 on:
   workflow_call:
