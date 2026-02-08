@@ -13,6 +13,11 @@ on:
         required: false
         default: "blacksmith-4vcpu-ubuntu-2404"
         type: string
+      dependency-group:
+        description: "UV dependency group containing python-semantic-release"
+        required: false
+        default: "maintain"
+        type: string
       pypi-publish:
         description: "PyPI publish mode: 'true' for PyPI, 'test' for TestPyPI, 'false' to skip"
         required: false
@@ -50,7 +55,9 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --group maintain
+        env:
+          DEP_GROUP: ${{ inputs.dependency-group }}
+        run: uv sync --group "$DEP_GROUP"
 
       - name: Semantic Release
         id: release
