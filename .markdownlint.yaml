@@ -1,0 +1,5 @@
+# Relaxed rules for documentation-heavy repo
+MD013: false # line length - prose wrapping is style choice
+MD024: false # duplicate headings - needed for repeated section patterns
+MD033: false # inline HTML - needed for details/summary and emoji
+MD060: false # table column style - GitHub renders tables fine without strict alignment
