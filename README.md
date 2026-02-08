@@ -256,7 +256,7 @@ uv publish --token "$(op read op://Personal/pypi-token/credential)"
 
 Publish MCP servers to the [official MCP Registry](https://registry.modelcontextprotocol.io/) using OIDC authentication.
 
-**Usage:**
+**Usage (standalone workflow — npm projects):**
 
 ```yaml
 # .github/workflows/mcp-registry-publish.yml
@@ -278,11 +278,24 @@ jobs:
     uses: detailobsessed/ci-components/.github/workflows/mcp-registry-publish-bun.yml@main
 ```
 
+**Usage (inline job — Python/UV projects):**
+
+For Python projects using `semantic-release-uv.yml`, add MCP Registry publish as a job in `release.yml` gated on `released == 'true'` to avoid duplicate-version errors:
+
+```yaml
+# Inside release.yml, alongside pypi-publish
+  mcp-registry-publish:
+    needs: release
+    if: needs.release.outputs.released == 'true'
+    uses: detailobsessed/ci-components/.github/workflows/mcp-registry-publish-bun.yml@main
+```
+
 **Inputs:**
 
 | Input | Default | Description |
 |-------|---------|-------------|
 | `runner` | `blacksmith-4vcpu-ubuntu-2404` | Runner to use (Blacksmith works with OIDC) |
+| `default-branch` | `main` | Default branch to fetch latest release tag from |
 
 **Prerequisites:**
 
