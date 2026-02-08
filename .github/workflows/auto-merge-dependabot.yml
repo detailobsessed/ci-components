@@ -37,7 +37,7 @@ jobs:
         run: |
           UPDATE_TYPE="${{ steps.metadata.outputs.update-type }}"
           ALLOWED_TYPES="${{ inputs.update-types }}"
-          
+
           SHOULD_MERGE="false"
           if [[ "$ALLOWED_TYPES" == *"minor"* ]] && [[ "$UPDATE_TYPE" == "version-update:semver-minor" ]]; then
             SHOULD_MERGE="true"
@@ -45,8 +45,8 @@ jobs:
           if [[ "$ALLOWED_TYPES" == *"patch"* ]] && [[ "$UPDATE_TYPE" == "version-update:semver-patch" ]]; then
             SHOULD_MERGE="true"
           fi
-          
-          echo "should-merge=$SHOULD_MERGE" >> $GITHUB_OUTPUT
+
+          echo "should-merge=$SHOULD_MERGE" >> "$GITHUB_OUTPUT"
 
       - name: Auto-merge
         if: steps.check.outputs.should-merge == 'true'
