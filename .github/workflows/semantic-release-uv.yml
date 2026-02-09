@@ -27,6 +27,12 @@ on:
       released:
         description: "Whether a new release was created"
         value: ${{ jobs.release.outputs.released }}
+      version:
+        description: "The released version (e.g. 1.2.3)"
+        value: ${{ jobs.release.outputs.version }}
+      tag:
+        description: "The release tag (e.g. v1.2.3)"
+        value: ${{ jobs.release.outputs.tag }}
 
 jobs:
   release:
@@ -40,6 +46,8 @@ jobs:
       name: pypi
     outputs:
       released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
 
     steps:
       - name: Checkout
@@ -69,13 +77,18 @@ jobs:
           exit_code=$?
           set -e
           echo "$output"
-          if echo "$output" | grep -q "No release will be made"; then
-            echo "released=false" >> "$GITHUB_OUTPUT"
-          elif [ $exit_code -ne 0 ]; then
-            echo "Semantic release failed with exit code $exit_code"
-            exit $exit_code
+          if [ $exit_code -ne 0 ]; then
+            if echo "$output" | grep -q "No release will be made"; then
+              echo "released=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Semantic release failed with exit code $exit_code"
+              exit $exit_code
+            fi
           else
             echo "released=true" >> "$GITHUB_OUTPUT"
+            tag=$(git describe --tags --abbrev=0)
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build package
