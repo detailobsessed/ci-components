@@ -6,23 +6,23 @@ default_install_hook_types = ["commit-msg", "pre-commit", "pre-push"]
 [[repos]]
 repo = "builtin"
 hooks = [
-  { id = "no-commit-to-branch", args = ["--branch", "main"], priority = 0 },
-  { id = "trailing-whitespace", priority = 0 },
-  { id = "end-of-file-fixer", priority = 0 },
-  { id = "check-yaml", args = ["--allow-multiple-documents"], priority = 0 },
-  { id = "check-toml", priority = 0 },
-  { id = "check-added-large-files", priority = 0 },
-  { id = "check-merge-conflict", priority = 0 },
-  { id = "check-case-conflict", priority = 0 },
-  { id = "check-symlinks", priority = 0 },
-  { id = "mixed-line-ending", args = ["--fix=lf"], priority = 0 },
-  { id = "detect-private-key", priority = 0 },
+  { id = "no-commit-to-branch", args = ["--branch", "main"], stages = ["pre-commit"], priority = 0 },
+  { id = "trailing-whitespace", stages = ["pre-commit"], priority = 0 },
+  { id = "end-of-file-fixer", stages = ["pre-commit"], priority = 0 },
+  { id = "check-yaml", args = ["--allow-multiple-documents"], stages = ["pre-commit"], priority = 0 },
+  { id = "check-toml", stages = ["pre-commit"], priority = 0 },
+  { id = "check-added-large-files", stages = ["pre-commit"], priority = 0 },
+  { id = "check-merge-conflict", stages = ["pre-commit"], priority = 0 },
+  { id = "check-case-conflict", stages = ["pre-commit"], priority = 0 },
+  { id = "check-symlinks", stages = ["pre-commit"], priority = 0 },
+  { id = "mixed-line-ending", args = ["--fix=lf"], stages = ["pre-commit"], priority = 0 },
+  { id = "detect-private-key", stages = ["pre-commit"], priority = 0 },
 ]
 
 [[repos]]
 repo = "https://github.com/gitleaks/gitleaks"
 rev = "v8.30.0"
-hooks = [{ id = "gitleaks", priority = 1 }]
+hooks = [{ id = "gitleaks", stages = ["pre-commit"], priority = 1 }]
 
 [[repos]]
 repo = "https://github.com/compilerla/conventional-pre-commit"
@@ -47,14 +47,20 @@ hooks = [
 [[repos]]
 repo = "https://github.com/rhysd/actionlint"
 rev = "v1.7.10"
-hooks = [{ id = "actionlint", priority = 1 }]
+hooks = [{ id = "actionlint", stages = ["pre-commit"], priority = 1 }]
 
 [[repos]]
 repo = "https://github.com/crate-ci/typos"
-rev = "v1.43.3"
-hooks = [{ id = "typos", priority = 1 }]
+rev = "v1.43.4"
+hooks = [{ id = "typos", stages = ["pre-commit"], priority = 1 }]
 
 [[repos]]
 repo = "https://github.com/igorshubovych/markdownlint-cli"
 rev = "v0.47.0"
-hooks = [{ id = "markdownlint", args = ["--fix"], priority = 1 }]
+hooks = [{ id = "markdownlint", args = ["--fix"], stages = ["pre-commit"], priority = 1 }]
+
+[[repos]]
+repo = "local"
+hooks = [
+  { id = "actions-up", name = "Check GitHub Actions updates", language = "system", entry = "env CI=true actions-up --dry-run --yes", stages = ["pre-push"], priority = 1 },
+]
