@@ -101,6 +101,7 @@ jobs:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     uses: detailobsessed/ci-components/.github/workflows/semantic-release-uv.yml@main
     with:
+      python-version: "3.14"  # Must match your project's requires-python
       # MUST be "false" when using trusted publishing — see pypi-publish job below
       pypi-publish: "false"
     # Pass GITHUB_TOKEN to the reusable workflow
@@ -330,13 +331,16 @@ If your project is an MCP server, see [MCP Registry Publish](#mcp-registry-publi
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `python-version` | `3.13` | Python version |
+| `python-version` | **required** | Python version (must match your project's `requires-python`) |
 | `runner` | `blacksmith-4vcpu-ubuntu-2404` | GitHub Actions runner |
+| `dependency-group` | `maintain` | UV dependency group containing `python-semantic-release` |
 | `pypi-publish` | `false` | PyPI publish mode: `true`, `test`, or `false` (use `false` with trusted publishing) |
 
 | Output | Description |
 |--------|-------------|
 | `released` | `true` if a new release was created, `false` otherwise |
+| `version` | The released version (e.g. `1.2.3`) — only set when `released` is `true` |
+| `tag` | The release tag (e.g. `v1.2.3`) — only set when `released` is `true` |
 
 **Required in calling repo:**
 
