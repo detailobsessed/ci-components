@@ -557,3 +557,4 @@ jobs:
 - **npm OIDC requires Node.js 24+** and **`ubuntu-latest`** (not Blacksmith). Earlier Node versions fail with "Access token expired or revoked".
 - **npm trusted publisher workflow filename** must be the calling workflow (e.g. `npm-publish.yml`), not the reusable workflow.
 - **MCP Registry "version already exists"** — if semantic-release runs but there's nothing to release, the MCP publish step would try to re-publish the same version. Gate on `released == 'true'` to avoid this.
+- **Bulk-updating action versions** — Dependabot handles individual updates, but for a one-shot bulk update you can use [`actions-up`](https://github.com/azat-io/actions-up): `npx actions-up`.

@@ -34,10 +34,10 @@ jobs:
 
       - name: Check if update type should be auto-merged
         id: check
+        env:
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          ALLOWED_TYPES: ${{ inputs.update-types }}
         run: |
-          UPDATE_TYPE="${{ steps.metadata.outputs.update-type }}"
-          ALLOWED_TYPES="${{ inputs.update-types }}"
-
           SHOULD_MERGE="false"
           if [[ "$ALLOWED_TYPES" == *"minor"* ]] && [[ "$UPDATE_TYPE" == "version-update:semver-minor" ]]; then
             SHOULD_MERGE="true"
@@ -50,6 +50,8 @@ jobs:
 
       - name: Auto-merge
         if: steps.check.outputs.should-merge == 'true'
-        run: gh pr merge --auto --${{ inputs.merge-method }} "${{ github.event.pull_request.number }}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_METHOD: ${{ inputs.merge-method }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: gh pr merge --auto --"$MERGE_METHOD" "$PR_NUMBER"
