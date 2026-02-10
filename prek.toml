@@ -58,9 +58,3 @@ hooks = [{ id = "typos", stages = ["pre-commit"], priority = 1 }]
 repo = "https://github.com/igorshubovych/markdownlint-cli"
 rev = "v0.47.0"
 hooks = [{ id = "markdownlint", args = ["--fix"], stages = ["pre-commit"], priority = 1 }]
-
-[[repos]]
-repo = "local"
-hooks = [
-  { id = "actions-up", name = "Check GitHub Actions updates", language = "system", entry = "env CI=true actions-up --dry-run --yes", stages = ["pre-push"], priority = 1 },
-]
