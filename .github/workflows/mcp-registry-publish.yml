@@ -40,4 +40,14 @@ jobs:
         run: ./mcp-publisher login github-oidc
 
       - name: Publish to MCP Registry
-        run: ./mcp-publisher publish
+        run: |
+          if output=$(./mcp-publisher publish 2>&1); then
+            echo "$output"
+            exit 0
+          fi
+          if echo "$output" | grep -q "cannot publish duplicate version"; then
+            echo "::notice::Version already published to MCP Registry — skipping (idempotent)"
+            exit 0
+          fi
+          echo "$output" >&2
+          exit 1
