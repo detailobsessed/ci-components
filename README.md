@@ -154,8 +154,9 @@ Always validate on TestPyPI before touching production PyPI.
 uv build
 
 # Publish to TestPyPI — uses 1Password CLI to avoid tokens in shell history
+# Replace the op:// path with your own vault/item (find yours with: op item list | grep -i pypi)
 uv publish --publish-url https://test.pypi.org/legacy/ \
-  --token "$(op read op://Personal/testpypi-token/credential)"
+  --token "$(op read 'op://Private/test-pypi-trusted-publishing-token/credential')"
 ```
 
 **c) Verify the package installs correctly:**
@@ -178,7 +179,8 @@ Once TestPyPI looks good:
 uv build
 
 # Publish to production PyPI
-uv publish --token "$(op read op://Personal/pypi-token/credential)"
+# Replace the op:// path with your own vault/item
+uv publish --token "$(op read 'op://Private/REAL-pypi-trusted-publishing-token/credential')"
 ```
 
 ### 6. Configure PyPI trusted publishing (one-time)
