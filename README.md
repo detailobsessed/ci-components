@@ -6,7 +6,7 @@ Reusable GitHub Actions workflows for personal projects.
 
 | Workflow | File | Description |
 |----------|------|-------------|
-| **Semantic Release (Python/UV)** | `semantic-release-uv.yml` | Versioning, changelog, and optional PyPI publishing for Python/uv projects |
+| **Semantic Release (Python/UV)** | `semantic-release-uv.yml` | Versioning, changelog, and GitHub releases for Python/uv projects |
 | **Semantic Release (Bun)** | `semantic-release-bun.yml` | Versioning, changelog, and GitHub releases for Bun/TypeScript projects |
 | **NPM Publish (Bun)** | `npm-publish-bun.yml` | Publish to npm with OIDC provenance (no token needed) |
 | **MCP Registry Publish** | `mcp-registry-publish.yml` | Publish MCP servers to the [official MCP Registry](https://registry.modelcontextprotocol.io/) |
@@ -102,18 +102,13 @@ jobs:
     uses: detailobsessed/ci-components/.github/workflows/semantic-release-uv.yml@main
     with:
       python-version: "3.14"  # Must match your project's requires-python
-      # MUST be "false" when using trusted publishing — see pypi-publish job below
-      pypi-publish: "false"
     # Pass GITHUB_TOKEN to the reusable workflow
     secrets: inherit
 
-  # PyPI publish is a SEPARATE job because OIDC trusted publishing validates
-  # the workflow file path. Reusable workflows point to ci-components' repo,
-  # not yours — so PyPI rejects the token. This job runs in YOUR repo's context.
+  # PyPI publish MUST be a separate job in YOUR workflow — see "Why a separate job?" below
   pypi-publish:
     needs: release
-    # Only publish if semantic-release created a new version AND publishing is enabled
-    if: needs.release.outputs.released == 'true' && vars.PYPI_PUBLISH == 'true'
+    if: needs.release.outputs.released == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -124,20 +119,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: main          # Start from main (which has the new tag)
-          fetch-depth: 0     # Full history needed for git describe
-          fetch-tags: true   # Fetch all tags so we can find the latest release
-
-      # Checkout the exact commit that was tagged by semantic-release
-      - name: Checkout latest release tag
-        run: git checkout "$(git describe --tags --abbrev=0)"
+          ref: ${{ needs.release.outputs.tag }}
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
 
-      # Build the sdist and wheel
       - run: uv build
-      # Publish to PyPI using OIDC (no token needed — trusted publishing handles auth)
       - run: uv publish
 
   # Optional: MCP Registry publish (only for MCP servers)
@@ -148,7 +135,7 @@ jobs:
   #   uses: detailobsessed/ci-components/.github/workflows/mcp-registry-publish.yml@main
 ```
 
-> **⚠️ Why is `pypi-publish` a separate job?** PyPI OIDC trusted publishing validates the `job_workflow_ref` claim, which points to the *reusable* workflow's repo — not yours. Publishing from the reusable workflow will always fail with "no corresponding publisher". The `pypi-publish` job must live in *your* `release.yml`.
+> **⚠️ Why a separate job?** PyPI OIDC trusted publishing validates the `job_workflow_ref` claim in the OIDC token. For reusable workflows, this points to `ci-components`' repo — not yours. PyPI will reject the token with "no corresponding publisher". Until [pypi/warehouse#11096](https://github.com/pypi/warehouse/issues/11096) is resolved, the `pypi-publish` job **must** live in your own `release.yml`. This is a PyPI limitation, not a GitHub Actions one.
 
 ### 4. First publish — TestPyPI
 
@@ -182,8 +169,6 @@ uv pip install --index-url https://test.pypi.org/simple/ your-package
 
 Go to <https://test.pypi.org/manage/project/your-package/settings/publishing/> and add the same trusted publisher config as production (see step 6). This lets you test the full OIDC flow before going live.
 
-To use TestPyPI from the reusable workflow, set `pypi-publish: "test"` instead of `"false"`.
-
 ### 5. First publish — production PyPI
 
 Once TestPyPI looks good:
@@ -207,13 +192,7 @@ Go to <https://pypi.org/manage/project/your-package/settings/publishing/> and ad
 | **Workflow** | `release.yml` (**must be the calling workflow**, not the reusable one) |
 | **Environment** | `pypi` |
 
-### 7. Enable automated publishing
-
-Set the `PYPI_PUBLISH` repo variable to `true` in GitHub repo settings → Variables → Actions.
-
-From now on, every semantic-release version bump will automatically publish to PyPI.
-
-### 8. Optional: MCP Registry
+### 7. Optional: MCP Registry
 
 If your project is an MCP server, see [MCP Registry Publish](#mcp-registry-publish) below.
 
@@ -334,7 +313,6 @@ If your project is an MCP server, see [MCP Registry Publish](#mcp-registry-publi
 | `python-version` | **required** | Python version (must match your project's `requires-python`) |
 | `runner` | `blacksmith-4vcpu-ubuntu-2404` | GitHub Actions runner |
 | `dependency-group` | `maintain` | UV dependency group containing `python-semantic-release` |
-| `pypi-publish` | `false` | PyPI publish mode: `true`, `test`, or `false` (use `false` with trusted publishing) |
 
 | Output | Description |
 |--------|-------------|
@@ -553,7 +531,7 @@ jobs:
 ## Gotchas
 
 - **`GITHUB_TOKEN` releases don't emit `release` events.** Always use `workflow_run` to chain workflows, never `on: release: types: [published]`.
-- **PyPI trusted publishing only works from the calling workflow.** The `pypi-publish` input in `semantic-release-uv.yml` will NOT work with OIDC — you must have a separate job in your own `release.yml`.
+- **PyPI trusted publishing only works from the calling workflow.** PyPI validates `job_workflow_ref`, which points to the reusable workflow's repo for reusable workflows. You must have a separate `pypi-publish` job in your own `release.yml`. Tracked in [pypi/warehouse#11096](https://github.com/pypi/warehouse/issues/11096).
 - **npm OIDC requires Node.js 24+** and **`ubuntu-latest`** (not Blacksmith). Earlier Node versions fail with "Access token expired or revoked".
 - **npm trusted publisher workflow filename** must be the calling workflow (e.g. `npm-publish.yml`), not the reusable workflow.
 - **MCP Registry "version already exists"** — if semantic-release runs but there's nothing to release, the MCP publish step would try to re-publish the same version. Gate on `released == 'true'` to avoid this.
