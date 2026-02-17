@@ -123,6 +123,8 @@ jobs:
 
       - name: Setup uv
         uses: astral-sh/setup-uv@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - run: uv build
       - run: uv publish
