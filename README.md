@@ -532,6 +532,38 @@ jobs:
 
 ---
 
+## Workflow Permissions
+
+Semantic-release needs `contents: write` on the `GITHUB_TOKEN` to push tags and create GitHub releases. If your org or repo defaults to read-only tokens, releases will fail with **401 Unauthorized**.
+
+**Check current settings:**
+
+```bash
+# Org-level (overrides repo settings)
+gh api orgs/<ORG>/actions/permissions/workflow
+
+# Repo-level
+gh api repos/<OWNER>/<REPO>/actions/permissions/workflow
+```
+
+**Fix (org-level must be set first if it blocks repo-level):**
+
+```bash
+# Allow write permissions at org level
+gh api orgs/<ORG>/actions/permissions/workflow -X PUT \
+  -f default_workflow_permissions=write \
+  -F can_approve_pull_request_reviews=false
+
+# Allow write permissions at repo level
+gh api repos/<OWNER>/<REPO>/actions/permissions/workflow -X PUT \
+  -f default_workflow_permissions=write \
+  -F can_approve_pull_request_reviews=false
+```
+
+> **Note:** Even when the workflow YAML declares `permissions: contents: write`, the org/repo setting can override it to read-only. The `permissions` block in the workflow only *restricts* — it cannot *elevate* beyond what the org/repo allows.
+
+---
+
 ## Gotchas
 
 - **`GITHUB_TOKEN` releases don't emit `release` events.** Always use `workflow_run` to chain workflows, never `on: release: types: [published]`.
