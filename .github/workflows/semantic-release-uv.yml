@@ -59,7 +59,7 @@ jobs:
       - name: Install dependencies
         env:
           DEP_GROUP: ${{ inputs.dependency-group }}
-        run: uv sync --group "$DEP_GROUP"
+        run: uv sync --no-default-groups --group "$DEP_GROUP"
 
       - name: Semantic Release
         id: release
